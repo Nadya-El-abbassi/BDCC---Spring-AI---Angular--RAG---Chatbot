@@ -89,27 +89,7 @@ Le frontend sera accessible sur `http://localhost:4200`.
 
 ## Structure du Projet
 
-```
-bdcc-ai-agent/
-├── src/main/java/org/example/bdccaiagent/
-│   ├── agents/         -> AIAgent.java (agent principal)
-│   ├── controllers/    -> AgentController.java (REST API)
-│   ├── rag/            -> RagDocumentIndexor.java (indexation PDF)
-│   ├── tools/          -> AgentTools.java (outils personnalisés)
-│   └── BdccAiAgentApplication.java
-├── src/main/resources/
-│   ├── application.properties
-│   ├── pdfs/           -> Documents PDF à indexer
-│   └── store/          -> Vector store (store.json)
-├── agent-ui/           -> Frontend Angular
-│   ├── src/app/
-│   │   ├── app.ts
-│   │   └── chat/
-│   │       ├── chat.ts
-│   │       └── chat.html
-│   └── main.ts
-└── pom.xml             -> Configuration Maven
-```
+w<img src="images/img.png">
 
 ---
 
