@@ -1,60 +1,33 @@
-package org.example.chatbot.agents;
+package net.youssfi.demospringaiagent.agents;
 
+import net.youssfi.demospringaiagent.tools.AgentTools;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.AdvisorUtils;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.tool.ToolCallbackProvider;
-import org.springframework.retry.annotation.Retryable;
-import org.springframework.stereotype.Component;
+import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import org.springframework.ai.vectorstore.VectorStore;
 
-import java.util.Arrays;
-
-@Component
+@Service
 public class AIAgent {
+    private ChatClient chatClient;
 
-    private final ChatClient chatClient;
-
-    public AIAgent(ChatClient.Builder builder,
-                   ToolCallbackProvider tools) {
-
-        // Affiche tous les outils disponibles pour debug
-        Arrays.stream(tools.getToolCallbacks()).forEach(toolCallback -> {
-            System.out.println("----------------------");
-            System.out.println("Tool : " + toolCallback.getToolDefinition());
-            System.out.println("----------------------");
-        });
-
-        this.chatClient = builder
-                .defaultSystem("""
-                        Vous êtes un assistant expert sur les employés.
-                        Vous devez répondre uniquement en utilisant les outils disponibles.
-                        Ne devinez jamais les réponses.
-                        Si vous ne savez pas, répondez JE NE SAIS PAS.
-                        """)
-                // On n’utilise pas de mémoire pour éviter les erreurs
-                //.defaultAdvisors(MessageChatMemoryAdvisor.builder(memory).build())
-                .defaultToolCallbacks(tools)
+    public AIAgent(ChatClient.Builder chatClient, ChatMemory chatMemory, AgentTools agentTools, VectorStore vectorStore) {
+        this.chatClient = chatClient
+                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build())
+                .defaultAdvisors(new SimpleLoggerAdvisor())
+                .defaultTools(agentTools)
+                .defaultAdvisors(new QuestionAnswerAdvisor(vectorStore))
                 .build();
     }
 
-    @Retryable(value = Exception.class, maxAttempts = 3)
-    public String askAgent(String query) {
-        try {
-            String response = chatClient.prompt()
-                    .user("""
-                        Question : %s
-                        Répondez uniquement en utilisant les outils.
-                        Si aucune réponse n'est disponible, répondez JE NE SAIS PAS.
-                    """.formatted(query))
-                    .call()
-                    .content();
-
-            System.out.println("Prompt envoyé : " + query);
-            System.out.println("Réponse reçue : " + response);
-
-            return response;
-        } catch (Exception e) {
-            System.err.println("Erreur AI : " + e.getMessage());
-            return "JE NE SAIS PAS";
-        }
+    public Flux<String> onQuery(String query) {
+        return chatClient.prompt()
+                .user(query)
+                .stream()
+                .content();
     }
 }
